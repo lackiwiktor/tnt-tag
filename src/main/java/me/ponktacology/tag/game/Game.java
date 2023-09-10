@@ -1,0 +1,303 @@
+package me.ponktacology.tag.game;
+
+import me.ponktacology.tag.Constants;
+import me.ponktacology.tag.Visibility;
+import me.ponktacology.tag.party.PartyTracker;
+import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+public class Game {
+
+    public Game(boolean privateGame, Consumer<Game> finishCallback) {
+        this.privateGame = privateGame;
+        this.finishCallback = finishCallback;
+    }
+
+    private enum State {WAITING_FOR_PLAYERS, COUNTDOWN, ROUND_START, ROUND_END, FINISHED, CANCELLED}
+
+    ;
+
+    private final Participant[] podiumParticipants = new Participant[3];
+    private final Map<UUID, Participant> participants = new HashMap<>();
+    private final Map<UUID, Spectator> spectators = new HashMap<>();
+    private final Ticker logic = createTicker();
+    private final Visibility.Strategy visibilityStrategy = createVisibilityStrategy();
+    private final Countdown countdown = createCountdown();
+
+    private final Consumer<Game> finishCallback;
+    private State state = State.WAITING_FOR_PLAYERS;
+    private boolean privateGame;
+
+    private int round;
+    private long roundStart;
+
+
+    public void start() {
+        logic.start();
+    }
+
+    private Ticker createTicker() {
+        return new Ticker(() -> {
+            if (state == State.WAITING_FOR_PLAYERS) {
+                handleWaitingForPlayers();
+                return;
+            }
+
+            if (state == State.ROUND_START) {
+                if (hasRoundEnded()) {
+                    endRound();
+                    return;
+                }
+
+                for (Participant participant : participants()) {
+                    if (participant.isTagged()) {
+                        // send actionbar and particles here
+                    }
+                }
+
+            }
+        });
+    }
+
+    private Countdown createCountdown() {
+        return new Countdown(() -> {
+            participants().forEach(participant -> {
+                participant.teleport(Constants.MAP_SPAWN);
+                participant.applyEffects();
+            }); //Teleport players only on initial round start
+            startRound();
+        }, seconds -> {
+            if (participants.size() < Constants.REQUIRED_PLAYERS) {
+                broadcast("Waiting for players...");
+                countdown.cancel();
+                state = State.WAITING_FOR_PLAYERS;
+                return;
+            }
+            broadcast("Game is starting in " + seconds + "!");
+        }, Constants.COUNTDOWN_DURATION);
+    }
+
+    private Visibility.Strategy createVisibilityStrategy() {
+        return (player, other) -> {
+            final var participant = participants.get(other.getUniqueId());
+
+            if (participant == null) {
+                final var spectator = spectators.remove(other.getUniqueId());
+                if (spectator == null) return false;
+                return spectators.get(player.getUniqueId()) != null;
+            }
+
+            return participants.get(player.getUniqueId()) != null || spectators.get(player.getUniqueId()) != null;
+        };
+    }
+
+    private void handleWaitingForPlayers() {
+        final var playerCount = participants.size();
+
+        if (playerCount >= Constants.REQUIRED_PLAYERS) {
+            startCountdown();
+        }
+    }
+
+    public boolean join(Player player) {
+        if (state != State.WAITING_FOR_PLAYERS && state != State.COUNTDOWN) {
+            //  player.sendMessage("Game has already started.");
+            return false;
+        }
+
+        if (participants.size() >= Constants.MAX_PLAYERS) {
+            //   player.sendMessage("Game is full.");
+            return false;
+        }
+
+        final var party = PartyTracker.INSTANCE.getByPlayer(player);
+        if (party != null && party.isLeader(player)) {
+            final var onlinePlayers = party.getOnlineMembers();
+            if (participants.size() + onlinePlayers.size() > Constants.MAX_PLAYERS) {
+                // player.sendMessage("Game is full.");
+                return false;
+            }
+
+            for (Player onlinePlayer : onlinePlayers) {
+                if (onlinePlayer == player) continue;
+                final var game = GameTracker.INSTANCE.getByPlayer(onlinePlayer);
+                if (game != null) game.handleQuit(onlinePlayer);
+                join(onlinePlayer);
+            }
+        }
+
+        final var participant = new Participant(player.getUniqueId());
+        participants.put(player.getUniqueId(), participant);
+        participant.reset();
+        participant.updateVisibility(visibilityStrategy);
+        player.teleport(Constants.LOBBY_SPAWN);
+        broadcast(player.getDisplayName() + " joined (" + participants.size() + "/" + Constants.MAX_PLAYERS + ")");
+        return true;
+    }
+
+    private void startCountdown() {
+        state = State.COUNTDOWN;
+        countdown.start();
+    }
+
+    private void startRound() {
+        round++;
+        roundStart = System.currentTimeMillis();
+        state = State.ROUND_START;
+        final var participants = new ArrayList<>(participants());
+        Collections.shuffle(participants);
+        var initiallyTaggedCount = Math.max(participants.size() * Constants.INITIALLY_TAGGED_FACTOR, 1);
+        for (Participant participant : participants) {
+            if (initiallyTaggedCount-- <= 0) break;
+            participant.markAsTagged();
+        }
+    }
+
+    private void endRound() {
+        state = State.ROUND_END;
+        List<Participant> losers = new ArrayList<>();
+        List<Participant> winners = new ArrayList<>();
+        final var participantIterator = participants.entrySet().iterator();
+
+        while (participantIterator.hasNext()) {
+            final var participantEntry = participantIterator.next();
+            final var participant = participantEntry.getValue();
+            if (!participant.isTagged()) {
+                winners.add(participant);
+                continue;
+            }
+
+            broadcast(participant.getName() + " exploded!");
+            losers.add(participant);
+            participantIterator.remove();
+            addSpectator(participant);
+        }
+
+        if (winners.size() <= podiumParticipants.length && winners.size() > 1) {
+            podiumParticipants[winners.size() - 1] = losers.get(0);
+        }
+
+        if (winners.size() == 1) {
+            final var winner = winners.get(0);
+            podiumParticipants[0] = winner;
+            endGame(winner);
+            return;
+        }
+
+        broadcast(losers.stream().map(Participant::getName).collect(Collectors.joining(", ")) + " are losers!");
+
+        startRound();
+    }
+
+    private void endGame(Participant winner) {
+        for (int i = 0; i < podiumParticipants.length; i++) {
+            final var participant = podiumParticipants[i];
+            if (participant == null) continue;
+            broadcast((i + 1) + "# " + participant.getName());
+        }
+        finishGame();
+    }
+
+    private void finishGame() {
+        state = State.FINISHED;
+        logic.cancel();
+        countdown.cancel();
+        spectators().forEach(Spectator::moveToHub);
+        participants().forEach(Participant::moveToHub);
+        finishCallback.accept(this);
+    }
+
+    public boolean handleCombat(EntityDamageByEntityEvent event) {
+        final var victim = participants.get(event.getEntity().getUniqueId());
+        if (victim == null) return false;
+        final var attacker = participants.get(event.getDamager().getUniqueId());
+        if (attacker == null) return false;
+
+        if (hasRoundEnded() || state != State.ROUND_START) {
+            event.setCancelled(true);
+            return true;
+        }
+
+        if (!victim.isTagged() && attacker.isTagged()) {
+            victim.markAsTagged(attacker);
+            attacker.markAsNotTagged();
+            broadcast(victim.getName() + " is now IT.");
+        }
+
+        event.setDamage(0.01);
+        return true;
+    }
+
+    public boolean handleDamage(EntityDamageEvent event) {
+        final var victim = participants.get(event.getEntity().getUniqueId());
+        if (victim == null) return false;
+        if (event.getCause() == EntityDamageEvent.DamageCause.FALL) event.setCancelled(true);
+        return true;
+    }
+
+    public boolean handleQuit(Player event) {
+        final var player = event.getPlayer();
+        final var participant = participants.remove(player.getUniqueId());
+
+        if (participant == null) {
+            return spectators.remove(player.getUniqueId()) != null;
+        }
+
+        if (participant.hasTaggedRecently()) {
+            final var tagged = participants().stream().filter(it -> it.isTagged() && it.getTaggedBy() == participant).findFirst().orElse(null);
+            if (tagged != null) tagged.markAsNotTagged(); //Remove one TNT from the game
+        }
+
+        broadcast(participant.getName() + " quit.");
+        return true;
+    }
+
+    private void addSpectator(Participant participant) {
+        final var spectator = participant.toSpectator();
+        spectators.put(participant.getUUID(), spectator);
+        spectator.setup(visibilityStrategy);
+    }
+
+    public boolean isPrivate() {
+        return privateGame;
+    }
+
+    private Collection<Participant> participants() {
+        return participants.values();
+    }
+
+    private Collection<Spectator> spectators() {
+        return spectators.values();
+    }
+
+    public long roundTimeLeft() {
+        return state == State.ROUND_START ? roundDuration() - (System.currentTimeMillis() - roundStart) : 0;
+    }
+
+    private void broadcast(String message) {
+        participants().forEach(it -> it.sendMessage(message));
+        spectators().forEach(it -> it.sendMessage(message));
+    }
+
+    private boolean hasRoundEnded() {
+        return roundTimeLeft() <= 0;
+    }
+
+    public boolean isInGame(Player player) {
+        return participants.get(player.getUniqueId()) != null || spectators.get(player.getUniqueId()) != null;
+    }
+
+    private long roundDuration() {
+        return round == 1 ? Constants.FIRST_ROUND_DURATION : Constants.ROUND_DURATION;
+    }
+
+    @Override
+    public String toString() {
+        return "Game{" + "participants=" + participants + ", spectators=" + spectators + ", state=" + state + ", roundStart=" + roundStart + ", timeLeft=" + roundTimeLeft() + '}';
+    }
+}

@@ -9,6 +9,15 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class Constants {
+    public static final long ASSIST_TIME = TimeUnit.MILLISECONDS.convert(10, TimeUnit.SECONDS);
+
+    public static class Database {
+        public static final String NAME = "tnt-tag";
+        public static final String USERNAME = "user";
+        public static final String PASSWORD = "1234";
+        public static final String HOST = "localhost";
+        public static final int PORT = 5432;
+    }
     public static final int MAX_PLAYERS = 5;
     public static final int REQUIRED_PLAYERS = 2;
     public static final int COUNTDOWN_DURATION = 5; //In seconds

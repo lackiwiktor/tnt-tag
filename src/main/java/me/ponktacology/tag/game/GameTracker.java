@@ -30,6 +30,9 @@ public enum GameTracker {
     }
 
     public void joinQueue(Player player) {
+        final var currentGame = getByPlayer(player);
+        if (currentGame != null) currentGame.handleQuit(player);
+
         for (Game game : games) {
             if (!game.isPrivate() && game.join(player)) {
                 return;
@@ -55,7 +58,7 @@ public enum GameTracker {
         return games;
     }
 
-    public static class GameListener implements Listener {
+    private static class GameListener implements Listener {
 
         @EventHandler(ignoreCancelled = true)
         public void on(EntityDamageByEntityEvent event) {

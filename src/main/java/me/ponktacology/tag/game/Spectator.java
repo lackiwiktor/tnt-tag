@@ -8,6 +8,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class Spectator {
@@ -43,5 +44,18 @@ public class Spectator {
         final var player = getPlayer();
         if (player == null) throw new IllegalStateException("offline message");
         player.sendMessage(message);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Spectator spectator = (Spectator) o;
+        return Objects.equals(uuid, spectator.uuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(uuid);
     }
 }

@@ -21,7 +21,7 @@ public class PartyArgumentProvider implements ArgumentProvider<Party> {
         for (Party party : PartyTracker.INSTANCE.parties()) {
             if (party.hasPlayer(player)) return party;
         }
-        return null;
+        throw new BladeExitMessage("Party not found.");
     }
 
     @Override

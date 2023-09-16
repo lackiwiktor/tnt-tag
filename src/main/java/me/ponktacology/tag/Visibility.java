@@ -12,10 +12,8 @@ public class Visibility {
     public static void update(Player player, Player other, Strategy strategy) {
         if (strategy.canSee(player, other)) {
             player.showPlayer(other);
-            System.out.println(other.getName() + " is shown for " + player.getName());
         } else {
             player.hidePlayer(other);
-            System.out.println(other.getName() + " is hidden for " + player.getName());
         }
     }
 

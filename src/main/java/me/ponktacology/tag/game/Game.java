@@ -3,6 +3,7 @@ package me.ponktacology.tag.game;
 import me.ponktacology.tag.Constants;
 import me.ponktacology.tag.Visibility;
 import me.ponktacology.tag.party.PartyTracker;
+import me.ponktacology.tag.statistics.StatisticsTracker;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -13,29 +14,25 @@ import java.util.stream.Collectors;
 
 public class Game {
 
-    public Game(boolean privateGame, Consumer<Game> finishCallback) {
-        this.privateGame = privateGame;
-        this.finishCallback = finishCallback;
-    }
-
     private enum State {WAITING_FOR_PLAYERS, COUNTDOWN, ROUND_START, ROUND_END, FINISHED, CANCELLED}
 
-    ;
-
-    private final Participant[] podiumParticipants = new Participant[3];
+    private final Participant[] podium = new Participant[3];
     private final Map<UUID, Participant> participants = new HashMap<>();
     private final Map<UUID, Spectator> spectators = new HashMap<>();
     private final Ticker logic = createTicker();
     private final Visibility.Strategy visibilityStrategy = createVisibilityStrategy();
     private final Countdown countdown = createCountdown();
-
     private final Consumer<Game> finishCallback;
-    private State state = State.WAITING_FOR_PLAYERS;
-    private boolean privateGame;
+    private final boolean privateGame;
 
+    private State state = State.WAITING_FOR_PLAYERS;
     private int round;
     private long roundStart;
 
+    public Game(boolean privateGame, Consumer<Game> finishCallback) {
+        this.privateGame = privateGame;
+        this.finishCallback = finishCallback;
+    }
 
     public void start() {
         logic.start();
@@ -87,7 +84,7 @@ public class Game {
             final var participant = participants.get(other.getUniqueId());
 
             if (participant == null) {
-                final var spectator = spectators.remove(other.getUniqueId());
+                final var spectator = spectators.get(other.getUniqueId());
                 if (spectator == null) return false;
                 return spectators.get(player.getUniqueId()) != null;
             }
@@ -172,31 +169,49 @@ public class Game {
                 continue;
             }
 
+            if (!privateGame) StatisticsTracker.INSTANCE.incrementByOne(participant.getUUID(), Statistic.Type.LOOSE);
+
             broadcast(participant.getName() + " exploded!");
             losers.add(participant);
             participantIterator.remove();
             addSpectator(participant);
         }
 
-        if (winners.size() <= podiumParticipants.length && winners.size() > 1) {
-            podiumParticipants[winners.size() - 1] = losers.get(0);
+        final var killers = losers.stream().map(Participant::getTaggedBy).collect(Collectors.toList());
+        final var assisters = new HashSet<Participant>();
+
+        for (Participant loser : losers) {
+            assisters.addAll(loser.getAssisters());
+        }
+
+        killers.forEach(assisters::remove);
+
+        for (Participant killer : killers) {
+            if (!privateGame) StatisticsTracker.INSTANCE.incrementByOne(killer.getUUID(), Statistic.Type.KILL);
+        }
+        for (Participant assister : assisters) {
+            if (!privateGame) StatisticsTracker.INSTANCE.incrementByOne(assister.getUUID(), Statistic.Type.KILL);
+        }
+
+        if (winners.size() <= podium.length && winners.size() > 1) {
+            podium[winners.size() - 1] = losers.get(0);
         }
 
         if (winners.size() == 1) {
             final var winner = winners.get(0);
-            podiumParticipants[0] = winner;
+            podium[0] = winner;
             endGame(winner);
             return;
         }
 
         broadcast(losers.stream().map(Participant::getName).collect(Collectors.joining(", ")) + " are losers!");
-
         startRound();
     }
 
     private void endGame(Participant winner) {
-        for (int i = 0; i < podiumParticipants.length; i++) {
-            final var participant = podiumParticipants[i];
+        if (!privateGame) StatisticsTracker.INSTANCE.incrementByOne(winner.getUUID(), Statistic.Type.WIN);
+        for (int i = 0; i < podium.length; i++) {
+            final var participant = podium[i];
             if (participant == null) continue;
             broadcast((i + 1) + "# " + participant.getName());
         }
@@ -214,9 +229,21 @@ public class Game {
 
     public boolean handleCombat(EntityDamageByEntityEvent event) {
         final var victim = participants.get(event.getEntity().getUniqueId());
-        if (victim == null) return false;
+        if (victim == null) {
+            if (spectators.containsKey(event.getEntity().getUniqueId())) {
+                event.setCancelled(true);
+                return true;
+            }
+            return false;
+        }
         final var attacker = participants.get(event.getDamager().getUniqueId());
-        if (attacker == null) return false;
+        if (attacker == null) {
+            if (spectators.containsKey(event.getDamager().getUniqueId())) {
+                event.setCancelled(true);
+                return true;
+            }
+            return false;
+        }
 
         if (hasRoundEnded() || state != State.ROUND_START) {
             event.setCancelled(true);
@@ -227,6 +254,10 @@ public class Game {
             victim.markAsTagged(attacker);
             attacker.markAsNotTagged();
             broadcast(victim.getName() + " is now IT.");
+            if (!privateGame) {
+                StatisticsTracker.INSTANCE.incrementByOne(attacker.getUUID(), Statistic.Type.HIT);
+                StatisticsTracker.INSTANCE.incrementByOne(victim.getUUID(), Statistic.Type.DAMAGED);
+            }
         }
 
         event.setDamage(0.01);
@@ -294,6 +325,18 @@ public class Game {
 
     private long roundDuration() {
         return round == 1 ? Constants.FIRST_ROUND_DURATION : Constants.ROUND_DURATION;
+    }
+
+    public List<String> scoreboard(Player player) {
+        switch (state) {
+            case WAITING_FOR_PLAYERS:
+            case COUNTDOWN:
+                return List.of("Players: " + participants.size() + "/" + Constants.MAX_PLAYERS);
+            case ROUND_START:
+                return List.of("Round: " + round, "Explosion in: " + roundTimeLeft(), "Alive: " + participants.size());
+            default:
+                return List.of("Game finished!");
+        }
     }
 
     @Override

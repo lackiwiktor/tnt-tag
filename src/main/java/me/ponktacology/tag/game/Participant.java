@@ -13,9 +13,8 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Participant {
 
@@ -55,12 +54,12 @@ public class Participant {
         player.getInventory().setHelmet(new ItemStack(Material.TNT));
         player.removePotionEffect(PotionEffectType.SPEED);
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 3, false, false));
-        System.out.println(player.getActivePotionEffects());
     }
 
     public void markAsNotTagged() {
         this.tagged = false;
         this.lastUnTag = System.currentTimeMillis();
+     //   combatHistory.clear();
         final var player = getPlayer();
         if (player == null) throw new IllegalStateException("offline un-tag");
         player.getInventory().setHelmet(new ItemStack(Material.AIR));
@@ -97,6 +96,13 @@ public class Participant {
         return player.getName();
     }
 
+    public List<Participant> getAssisters() {
+        return combatHistory.entrySet()
+                .stream()
+                .filter(it -> System.currentTimeMillis() - it.getValue() < Constants.ASSIST_TIME)
+                .map(Map.Entry::getKey).collect(Collectors.toList());
+    }
+
     private @Nullable Player getPlayer() {
         return Bukkit.getPlayer(uuid);
     }
@@ -121,5 +127,18 @@ public class Participant {
         final var player = getPlayer();
         if (player == null) throw new IllegalStateException("offline move to hub");
         Hub.INSTANCE.moveToHub(player);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Participant that = (Participant) o;
+        return Objects.equals(uuid, that.uuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(uuid);
     }
 }

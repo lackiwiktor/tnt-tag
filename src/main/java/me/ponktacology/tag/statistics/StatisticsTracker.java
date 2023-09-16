@@ -35,7 +35,6 @@ public enum StatisticsTracker {
     private void load(UUID player) {
         final var statistics = new Statistics(player);
         this.statistics.put(player, statistics);
-        System.out.println("PUT");
         statistics.fetch();
     }
 

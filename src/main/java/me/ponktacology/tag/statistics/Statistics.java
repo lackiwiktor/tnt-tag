@@ -53,8 +53,8 @@ public class Statistics {
             while (true) {
                 try {
                     if (!result.next()) break;
-                    final var type = Statistic.Type.valueOf(result.getString(2));
-                    final var value = result.getInt(3);
+                    final var type = Statistic.Type.valueOf(result.getString(3));
+                    final var value = result.getInt(4);
                     statistics.put(type, new Statistic(type, value));
                 } catch (SQLException e) {
                     throw new RuntimeException(e);

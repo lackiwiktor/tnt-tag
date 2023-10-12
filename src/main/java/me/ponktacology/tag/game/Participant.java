@@ -4,6 +4,7 @@ import me.ponktacology.tag.Constants;
 import me.ponktacology.tag.Hub;
 import me.ponktacology.tag.PlayerUtil;
 import me.ponktacology.tag.Visibility;
+import me.ponktacology.tag.hotbar.Hotbar;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -59,7 +60,7 @@ public class Participant {
     public void markAsNotTagged() {
         this.tagged = false;
         this.lastUnTag = System.currentTimeMillis();
-     //   combatHistory.clear();
+        //   combatHistory.clear();
         final var player = getPlayer();
         if (player == null) throw new IllegalStateException("offline un-tag");
         player.getInventory().setHelmet(new ItemStack(Material.AIR));
@@ -129,6 +130,23 @@ public class Participant {
         Hub.INSTANCE.moveToHub(player);
     }
 
+    public void prepareForLobby(Visibility.Strategy visibilityStrategy) {
+        final var player = getPlayer();
+        if (player == null) throw new IllegalStateException("offline player prepare");
+        reset();
+        updateVisibility(visibilityStrategy);
+        teleport(Constants.LOBBY_SPAWN);
+        Hotbar.IN_LOBBY.apply(getPlayer());
+    }
+
+    public void prepareForGame() {
+        final var player = getPlayer();
+        if (player == null) throw new IllegalStateException("offline player prepare");
+        teleport(Constants.MAP_SPAWN);
+        applyEffects();
+        Hotbar.IN_GAME.apply(player);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -141,4 +159,6 @@ public class Participant {
     public int hashCode() {
         return Objects.hash(uuid);
     }
+
+
 }

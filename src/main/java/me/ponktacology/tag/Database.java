@@ -17,12 +17,10 @@ public enum Database {
     private final HikariDataSource dataSource;
 
     Database() {
-
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:postgresql://" + Constants.Database.HOST + ":" + Constants.Database.PORT + "/" + Constants.Database.NAME);
+        config.setJdbcUrl("jdbc:mysql://" + Constants.Database.HOST + ":" + Constants.Database.PORT + "/" + Constants.Database.NAME);
         config.setUsername(Constants.Database.USERNAME);
         config.setPassword(Constants.Database.PASSWORD);
-        config.setDriverClassName("org.postgresql.Driver");
         config.addDataSourceProperty("cachePrepStmts", true);
         config.addDataSourceProperty("prepStmtCacheSize", 250);
         config.addDataSourceProperty("prepStmtCacheSqlLimit", 2048);

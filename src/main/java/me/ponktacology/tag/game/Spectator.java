@@ -4,6 +4,7 @@ import me.ponktacology.tag.Constants;
 import me.ponktacology.tag.Hub;
 import me.ponktacology.tag.PlayerUtil;
 import me.ponktacology.tag.Visibility;
+import me.ponktacology.tag.hotbar.Hotbar;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
@@ -32,6 +33,7 @@ public class Spectator {
         Visibility.update(player, visibilityStrategy);
         player.teleport(Constants.LOBBY_SPAWN);
         PlayerUtil.resetPlayer(player);
+        Hotbar.SPECTATOR.apply(player);
     }
 
     public void moveToHub() {

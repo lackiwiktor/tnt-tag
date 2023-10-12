@@ -4,6 +4,8 @@ import fr.mrmicky.fastboard.FastBoard;
 import me.ponktacology.tag.Hub;
 import me.ponktacology.tag.Plugin;
 import me.ponktacology.tag.game.GameTracker;
+import me.ponktacology.tag.game.Statistic;
+import me.ponktacology.tag.statistics.StatisticsTracker;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -12,6 +14,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public enum Scoreboard {
     INSTANCE;
@@ -47,8 +50,8 @@ public enum Scoreboard {
     public List<String> getScoreboard(Player player) {
         if (Hub.INSTANCE.isInHub(player)) return Collections.emptyList();
         final var game = GameTracker.INSTANCE.getByPlayer(player);
-        if (game == null) return Collections.emptyList();
-        return game.scoreboard(player);
+        if (game != null) return game.scoreboard(player);
+        return Arrays.stream(Statistic.Type.values()).map(it -> it.displayName() + ": " + StatisticsTracker.INSTANCE.get(player, it)).collect(Collectors.toList());
     }
 
     private static class ScoreboardListener implements Listener {

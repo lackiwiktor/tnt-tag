@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class Constants {
-    public static final long ASSIST_TIME = TimeUnit.MILLISECONDS.convert(10, TimeUnit.SECONDS);
 
     public static class Database {
         public static final String NAME = "tnt-tag";
@@ -18,12 +17,14 @@ public class Constants {
         public static final String HOST = "localhost";
         public static final int PORT = 5432;
     }
+
+    public static final long ASSIST_TIME = TimeUnit.MILLISECONDS.convert(10, TimeUnit.SECONDS);
     public static final int MAX_PLAYERS = 5;
     public static final int REQUIRED_PLAYERS = 2;
     public static final int COUNTDOWN_DURATION = 5; //In seconds
-    public static final long ROUND_DURATION = TimeUnit.MILLISECONDS.convert(30, TimeUnit.SECONDS); // In milliseconds
+    public static final long ROUND_DURATION = TimeUnit.MILLISECONDS.convert(45, TimeUnit.SECONDS); // In milliseconds
 
-    public static final long FIRST_ROUND_DURATION = TimeUnit.MILLISECONDS.convert(45, TimeUnit.SECONDS);
+    public static final long FIRST_ROUND_DURATION = TimeUnit.MILLISECONDS.convert(60, TimeUnit.SECONDS);
     public static final float INITIALLY_TAGGED_FACTOR = 0.25f;
     public static final Location MAP_SPAWN = new Location(Bukkit.getWorlds().get(0), 5, 5, 5);
     public static final Location LOBBY_SPAWN = new Location(Bukkit.getWorlds().get(0), -5, 5, -5);

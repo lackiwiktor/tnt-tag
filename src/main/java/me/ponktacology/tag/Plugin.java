@@ -2,6 +2,7 @@ package me.ponktacology.tag;
 
 import me.ponktacology.tag.game.GameCommands;
 import me.ponktacology.tag.game.GameTracker;
+import me.ponktacology.tag.hotbar.Hotbar;
 import me.ponktacology.tag.party.Party;
 import me.ponktacology.tag.party.PartyArgumentProvider;
 import me.ponktacology.tag.party.PartyCommands;
@@ -20,6 +21,7 @@ public class Plugin extends JavaPlugin {
         Hub.INSTANCE.initialize();
         StatisticsTracker.INSTANCE.initialize();
         Scoreboard.INSTANCE.initialize();
+        Hotbar.initialize();
         Blade.forPlatform(new BladeBukkitPlatform(this)).bind(binder -> binder.bind(Party.class, new PartyArgumentProvider())).build()
                 .register(GameCommands.class)
                 .register(PartyCommands.class)

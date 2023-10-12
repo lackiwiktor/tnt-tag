@@ -1,7 +1,9 @@
 package me.ponktacology.tag.game;
 
 import me.ponktacology.tag.Constants;
+import me.ponktacology.tag.Hub;
 import me.ponktacology.tag.Visibility;
+import me.ponktacology.tag.hotbar.Hotbar;
 import me.ponktacology.tag.party.PartyTracker;
 import me.ponktacology.tag.statistics.StatisticsTracker;
 import org.bukkit.entity.Player;
@@ -16,6 +18,7 @@ public class Game {
 
     private enum State {WAITING_FOR_PLAYERS, COUNTDOWN, ROUND_START, ROUND_END, FINISHED, CANCELLED}
 
+    private final UUID id = UUID.randomUUID();
     private final Participant[] podium = new Participant[3];
     private final Map<UUID, Participant> participants = new HashMap<>();
     private final Map<UUID, Spectator> spectators = new HashMap<>();
@@ -63,10 +66,7 @@ public class Game {
 
     private Countdown createCountdown() {
         return new Countdown(() -> {
-            participants().forEach(participant -> {
-                participant.teleport(Constants.MAP_SPAWN);
-                participant.applyEffects();
-            }); //Teleport players only on initial round start
+            participants().forEach(Participant::prepareForGame); //Teleport players only on initial round start
             startRound();
         }, seconds -> {
             if (participants.size() < Constants.REQUIRED_PLAYERS) {
@@ -130,9 +130,7 @@ public class Game {
 
         final var participant = new Participant(player.getUniqueId());
         participants.put(player.getUniqueId(), participant);
-        participant.reset();
-        participant.updateVisibility(visibilityStrategy);
-        player.teleport(Constants.LOBBY_SPAWN);
+        participant.prepareForLobby(visibilityStrategy);
         broadcast(player.getDisplayName() + " joined (" + participants.size() + "/" + Constants.MAX_PLAYERS + ")");
         return true;
     }
@@ -184,10 +182,9 @@ public class Game {
             assisters.addAll(loser.getAssisters());
         }
 
-        killers.forEach(assisters::remove);
-
         for (Participant killer : killers) {
             if (!privateGame) StatisticsTracker.INSTANCE.incrementByOne(killer.getUUID(), Statistic.Type.KILL);
+            assisters.remove(killer);
         }
         for (Participant assister : assisters) {
             if (!privateGame) StatisticsTracker.INSTANCE.incrementByOne(assister.getUUID(), Statistic.Type.KILL);
@@ -271,8 +268,7 @@ public class Game {
         return true;
     }
 
-    public boolean handleQuit(Player event) {
-        final var player = event.getPlayer();
+    public boolean handleQuit(Player player) {
         final var participant = participants.remove(player.getUniqueId());
 
         if (participant == null) {
@@ -285,6 +281,7 @@ public class Game {
         }
 
         broadcast(participant.getName() + " quit.");
+
         return true;
     }
 
@@ -320,7 +317,7 @@ public class Game {
     }
 
     public boolean isInGame(Player player) {
-        return participants.get(player.getUniqueId()) != null || spectators.get(player.getUniqueId()) != null;
+        return participants.containsKey(player.getUniqueId()) || spectators.containsKey(player.getUniqueId());
     }
 
     private long roundDuration() {
@@ -342,5 +339,18 @@ public class Game {
     @Override
     public String toString() {
         return "Game{" + "participants=" + participants + ", spectators=" + spectators + ", state=" + state + ", roundStart=" + roundStart + ", timeLeft=" + roundTimeLeft() + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Game game = (Game) o;
+        return Objects.equals(id, game.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

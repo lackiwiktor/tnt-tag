@@ -69,21 +69,8 @@ public class Party {
         members.remove(player.getUniqueId());
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Party party = (Party) o;
-        return Objects.equals(id, party.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
-
     public List<Player> getOnlineMembers() {
-        return members.stream().map(Bukkit::getPlayer).collect(Collectors.toList());
+        return members.stream().map(Bukkit::getPlayer).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     @Override
@@ -95,5 +82,18 @@ public class Party {
                 ", invites=" + invites +
                 ", maxSize=" + maxSize +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Party party = (Party) o;
+        return Objects.equals(id, party.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

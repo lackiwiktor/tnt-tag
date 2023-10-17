@@ -14,11 +14,9 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static me.ponktacology.tag.Constants.NEAREST_PLAYER_COMPASS_UPDATE_DELAY;
-
 public class Game {
 
-    public static final NumberFormat TIMER_FORMAT = new DecimalFormat("0.0#");
+    public static final NumberFormat TIMER_FORMAT = new DecimalFormat("0.0");
 
     private enum State {WAITING_FOR_PLAYERS, COUNTDOWN, ROUND_START, ROUND_END, FINISHED, CANCELLED}
 
@@ -325,7 +323,7 @@ public class Game {
     }
 
     public long roundTimeLeft() {
-        return state == State.ROUND_START ? roundDuration() - (System.currentTimeMillis() - roundStart) : 0;
+        return Math.max(roundDuration() - (System.currentTimeMillis() - roundStart), 0);
     }
 
     private void broadcast(String message) {

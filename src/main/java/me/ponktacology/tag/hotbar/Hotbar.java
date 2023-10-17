@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -18,7 +19,8 @@ import java.util.function.Consumer;
 
 public enum Hotbar {
 
-    IN_GAME(new HotbarItem[]{new HotbarItem(new ItemBuilder(Material.COMPASS).name("&eNearest player"), event -> {})}),
+    IN_GAME(new HotbarItem[]{new HotbarItem(new ItemBuilder(Material.COMPASS).name("&eNearest player"), event -> {
+    })}),
     SPECTATOR(new HotbarItem[]{null, null, null, null, null, null, null, null, new HotbarItem(new ItemBuilder(Material.COMPASS).name("&eTeleporter"), event -> {
     }), new HotbarItem(new ItemBuilder(Material.COMPASS).name("&ePlay Again"), event -> {
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) {
@@ -29,14 +31,18 @@ public enum Hotbar {
         game.handleQuit(event.getPlayer());
         GameTracker.INSTANCE.joinQueue(event.getPlayer());
     }), new HotbarItem(new ItemBuilder(Material.COMPASS).name("&eReturn to Hub"), event -> {
+        System.out.println("CANODAWOND");
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) {
             return;
         }
+        System.out.println("DAWWAWD");
         final var game = GameTracker.INSTANCE.getByPlayer(event.getPlayer());
         if (game == null) throw new IllegalStateException("not in game");
         game.handleQuit(event.getPlayer());
         Hub.INSTANCE.moveToHub(event.getPlayer());
-    })}), IN_LOBBY(new HotbarItem[]{null, null, null, null, null, null, null, null, new HotbarItem(new ItemBuilder(Material.BED).name("&cReturn to Hub").lore("&7Right-click to return to the hub"), event -> {
+        System.out.println("DAWAW");
+    })}),
+    IN_LOBBY(new HotbarItem[]{null, null, null, null, null, null, null, null, new HotbarItem(new ItemBuilder(Material.BED).name("&cReturn to Hub").lore("&7Right-click to return to the hub"), event -> {
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) {
             return;
         }
@@ -50,7 +56,6 @@ public enum Hotbar {
     private final HotbarItem[] items;
 
     Hotbar(HotbarItem[] items) {
-        Preconditions.checkState(items.length == 9, "hotbar must hold 9 items");
         this.items = items;
     }
 
@@ -58,7 +63,8 @@ public enum Hotbar {
         final var item = event.getItem();
         if (item == null) return false;
         for (HotbarItem hotbarItem : items) {
-            if (item.isSimilar(hotbarItem.icon)) {
+            if (hotbarItem == null) continue;
+            if (hotbarItem.icon.isSimilar(item)) {
                 hotbarItem.onClick(event);
                 return true;
             }
@@ -68,7 +74,7 @@ public enum Hotbar {
 
     public void apply(Player player) {
         player.getInventory().clear();
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < items.length; i++) {
             final var item = items[i];
             player.getInventory().setItem(i, item == null ? null : item.icon);
         }
@@ -101,9 +107,14 @@ public enum Hotbar {
 
     private static class HotbarListener implements Listener {
 
-        @EventHandler(ignoreCancelled = true)
+        @EventHandler
         public void on(PlayerInteractEvent event) {
             handleClick(event);
+        }
+
+        @EventHandler(ignoreCancelled = true)
+        public void on(InventoryClickEvent event) {
+            event.setCancelled(true);
         }
     }
 }

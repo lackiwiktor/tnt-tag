@@ -39,7 +39,6 @@ public class GameCommands {
         final var game = GameTracker.INSTANCE.getByPlayer(sender);
         if (game != null) {
             game.handleQuit(sender);
-            return;
         }
         GameTracker.INSTANCE.joinQueue(sender);
     }

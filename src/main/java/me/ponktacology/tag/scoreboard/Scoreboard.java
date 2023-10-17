@@ -39,6 +39,7 @@ public enum Scoreboard {
     private void create(Player player) {
         final var scoreboard = new FastBoard(player);
         scoreboard.updateTitle("TAG");
+        scoreboards.put(player.getUniqueId(), scoreboard);
         update(player);
     }
 
@@ -48,24 +49,28 @@ public enum Scoreboard {
     }
 
     public List<String> getScoreboard(Player player) {
-        if (Hub.INSTANCE.isInHub(player)) return Collections.emptyList();
+        if (Hub.INSTANCE.isInHub(player)) {
+            return Arrays.stream(Statistic.Type.values())
+                    .map(it -> it.displayName() + ": " + StatisticsTracker.INSTANCE.get(player, it))
+                    .collect(Collectors.toList());
+        }
         final var game = GameTracker.INSTANCE.getByPlayer(player);
         if (game != null) return game.scoreboard(player);
-        return Arrays.stream(Statistic.Type.values()).map(it -> it.displayName() + ": " + StatisticsTracker.INSTANCE.get(player, it)).collect(Collectors.toList());
+        return Collections.emptyList();
     }
 
-    private static class ScoreboardListener implements Listener {
+    private class ScoreboardListener implements Listener {
 
         @EventHandler
         public void on(PlayerJoinEvent event) {
             final var player = event.getPlayer();
-            Scoreboard.INSTANCE.create(player);
+            create(player);
         }
 
         @EventHandler
         public void on(PlayerQuitEvent event) {
             final var player = event.getPlayer();
-            Scoreboard.INSTANCE.flush(player);
+            flush(player);
         }
     }
 }

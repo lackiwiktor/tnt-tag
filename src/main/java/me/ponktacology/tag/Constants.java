@@ -18,6 +18,7 @@ public class Constants {
         public static final int PORT = 5432;
     }
 
+    public static final long NEAREST_PLAYER_COMPASS_UPDATE_DELAY = 20; // In ticks
     public static final long ASSIST_TIME = TimeUnit.MILLISECONDS.convert(10, TimeUnit.SECONDS);
     public static final int MAX_PLAYERS = 5;
     public static final int REQUIRED_PLAYERS = 2;

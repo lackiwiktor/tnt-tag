@@ -1,20 +1,24 @@
 package me.ponktacology.tag.game;
 
 import me.ponktacology.tag.Constants;
-import me.ponktacology.tag.Hub;
 import me.ponktacology.tag.Visibility;
-import me.ponktacology.tag.hotbar.Hotbar;
 import me.ponktacology.tag.party.PartyTracker;
 import me.ponktacology.tag.statistics.StatisticsTracker;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static me.ponktacology.tag.Constants.NEAREST_PLAYER_COMPASS_UPDATE_DELAY;
+
 public class Game {
+
+    public static final NumberFormat TIMER_FORMAT = new DecimalFormat("0.0#");
 
     private enum State {WAITING_FOR_PLAYERS, COUNTDOWN, ROUND_START, ROUND_END, FINISHED, CANCELLED}
 
@@ -29,6 +33,8 @@ public class Game {
     private final boolean privateGame;
 
     private State state = State.WAITING_FOR_PLAYERS;
+
+    private int ticks;
     private int round;
     private long roundStart;
 
@@ -43,6 +49,7 @@ public class Game {
 
     private Ticker createTicker() {
         return new Ticker(() -> {
+            ticks++;
             if (state == State.WAITING_FOR_PLAYERS) {
                 handleWaitingForPlayers();
                 return;
@@ -54,14 +61,28 @@ public class Game {
                     return;
                 }
 
-                for (Participant participant : participants()) {
-                    if (participant.isTagged()) {
-                        // send actionbar and particles here
-                    }
+                if (ticks % Constants.NEAREST_PLAYER_COMPASS_UPDATE_DELAY == 0) {
+                    updateCompass();
                 }
-
             }
         });
+    }
+
+    private void updateCompass() {
+        final var participants = participants();
+        for (Participant participant : participants) {
+            var minDistance = Double.MAX_VALUE;
+            var closestPlayer = participant;
+            for (Participant other : participants) {
+                if (participant.equals(other)) continue;
+                final var distance = participant.getLocation().distanceSquared(other.getLocation());
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestPlayer = other;
+                }
+            }
+            participant.setCompass(closestPlayer.getLocation());
+        }
     }
 
     private Countdown createCountdown() {
@@ -175,7 +196,7 @@ public class Game {
             addSpectator(participant);
         }
 
-        final var killers = losers.stream().map(Participant::getTaggedBy).collect(Collectors.toList());
+        final var killers = losers.stream().map(Participant::getTaggedBy).filter(Objects::nonNull).collect(Collectors.toList());
         final var assisters = new HashSet<Participant>();
 
         for (Participant loser : losers) {
@@ -330,7 +351,7 @@ public class Game {
             case COUNTDOWN:
                 return List.of("Players: " + participants.size() + "/" + Constants.MAX_PLAYERS);
             case ROUND_START:
-                return List.of("Round: " + round, "Explosion in: " + roundTimeLeft(), "Alive: " + participants.size());
+                return List.of("Round: " + round, "Explosion in: " + TIMER_FORMAT.format(roundTimeLeft() / 1000.0), "Alive: " + participants.size());
             default:
                 return List.of("Game finished!");
         }

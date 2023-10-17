@@ -147,6 +147,18 @@ public class Participant {
         Hotbar.IN_GAME.apply(player);
     }
 
+    public Location getLocation() {
+        final var player = getPlayer();
+        if (player == null) throw new IllegalStateException("offline location");
+        return player.getLocation();
+    }
+
+    public void setCompass(Location location) {
+        final var player = getPlayer();
+        if (player == null) throw new IllegalStateException("offline compass");
+        player.setCompassTarget(location);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -159,6 +171,5 @@ public class Participant {
     public int hashCode() {
         return Objects.hash(uuid);
     }
-
 
 }

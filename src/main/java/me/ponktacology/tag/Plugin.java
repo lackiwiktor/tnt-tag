@@ -30,25 +30,7 @@ public class Plugin extends JavaPlugin {
                 .register(GameCommands.class)
                 .register(PartyCommands.class)
                 .register(StatisticsCommands.class);
-        Database.INSTANCE.update("CREATE TABLE IF NOT EXISTS statistics (key SERIAL NOT NULL PRIMARY KEY, id VARCHAR NOT NULL, type VARCHAR NOT NULL, value INTEGER NOT NULL)", s -> {
-        });
-
-        for (Field field : Constants.class.getFields()) {
-            if (getConfig().contains(field.getName())) {
-                try {
-                    field.set(null, getConfig().get(field.getName()));
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
-                try {
-                    getConfig().set(field.getName(), field.get(null));
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-                saveConfig();
-            }
-        }
+        Database.INSTANCE.update("CREATE TABLE IF NOT EXISTS statistics(id INT AUTO_INCREMENT PRIMARY KEY, uuid  VARCHAR(255), type  VARCHAR(255), value INT)", s -> {});
     }
 
     public static Plugin get() {

@@ -3,6 +3,7 @@ package me.ponktacology.tag.game;
 import me.ponktacology.tag.Constants;
 import me.ponktacology.tag.Visibility;
 import me.ponktacology.tag.party.PartyTracker;
+import me.ponktacology.tag.statistics.Statistics;
 import me.ponktacology.tag.statistics.StatisticsTracker;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -186,8 +187,7 @@ public class Game {
                 continue;
             }
 
-            if (!privateGame) StatisticsTracker.INSTANCE.incrementByOne(participant.getUUID(), Statistic.Type.LOOSE);
-
+            incrementStatistic(participant, Statistic.Type.LOOSE);
             broadcast(participant.getName() + " exploded!");
             losers.add(participant);
             participantIterator.remove();
@@ -202,11 +202,11 @@ public class Game {
         }
 
         for (Participant killer : killers) {
-            if (!privateGame) StatisticsTracker.INSTANCE.incrementByOne(killer.getUUID(), Statistic.Type.KILL);
+            incrementStatistic(killer, Statistic.Type.KILL);
             assisters.remove(killer);
         }
         for (Participant assister : assisters) {
-            if (!privateGame) StatisticsTracker.INSTANCE.incrementByOne(assister.getUUID(), Statistic.Type.KILL);
+            incrementStatistic(assister, Statistic.Type.ASSIST);
         }
 
         if (winners.size() <= podium.length && winners.size() > 1) {
@@ -225,7 +225,7 @@ public class Game {
     }
 
     private void endGame(Participant winner) {
-        if (!privateGame) StatisticsTracker.INSTANCE.incrementByOne(winner.getUUID(), Statistic.Type.WIN);
+        incrementStatistic(winner, Statistic.Type.WIN);
         for (int i = 0; i < podium.length; i++) {
             final var participant = podium[i];
             if (participant == null) continue;
@@ -270,10 +270,9 @@ public class Game {
             victim.markAsTagged(attacker);
             attacker.markAsNotTagged();
             broadcast(victim.getName() + " is now IT.");
-            if (!privateGame) {
-                StatisticsTracker.INSTANCE.incrementByOne(attacker.getUUID(), Statistic.Type.HIT);
-                StatisticsTracker.INSTANCE.incrementByOne(victim.getUUID(), Statistic.Type.DAMAGED);
-            }
+
+            incrementStatistic(attacker, Statistic.Type.HIT);
+            incrementStatistic(victim, Statistic.Type.DAMAGED);
         }
 
         event.setDamage(0.01);
@@ -341,6 +340,11 @@ public class Game {
 
     private long roundDuration() {
         return round == 1 ? Constants.FIRST_ROUND_DURATION : Constants.ROUND_DURATION;
+    }
+
+    private void incrementStatistic(Participant participant, Statistic.Type type) {
+        if (privateGame) return;
+        StatisticsTracker.INSTANCE.incrementByOne(participant.getUUID(), type);
     }
 
     public List<String> scoreboard(Player player) {

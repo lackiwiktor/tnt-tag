@@ -30,7 +30,7 @@ public class Statistics {
         // Terrible, n+1 problem, please fix!
         for (Statistic statistic : statistics.values()) {
             if (!statistic.dirty()) continue;
-            final var affectedRows = Database.INSTANCE.update("UPDATE SET value = ? WHERE id = ? AND type = ?", statement -> {
+            final var affectedRows = Database.INSTANCE.update("UPDATE SET value = ? WHERE uuid = ? AND type = ?", statement -> {
                 try {
                     statement.setInt(1, statistic.value());
                     statement.setString(2, player.toString());
@@ -44,7 +44,7 @@ public class Statistics {
     }
 
     public void fetch() {
-        Database.INSTANCE.query("SELECT * FROM statistics WHERE id = ?", statement -> {
+        Database.INSTANCE.query("SELECT * FROM statistics WHERE uuid = ?", statement -> {
             try {
                 statement.setString(1, player.toString());
             } catch (SQLException e) {
@@ -65,7 +65,7 @@ public class Statistics {
             // Terrible, n+1 problem, please fix!
             for (Statistic.Type type : Statistic.Type.values()) {
                 if (statistics.containsKey(type)) continue;
-                Database.INSTANCE.update("INSERT INTO statistics (id, type, value) VALUES (?, ?, ?)", statement -> {
+                Database.INSTANCE.update("INSERT INTO statistics (uuid, type, value) VALUES (?, ?, ?)", statement -> {
                     try {
                         statement.setString(1, player.toString());
                         statement.setString(2, type.toString());

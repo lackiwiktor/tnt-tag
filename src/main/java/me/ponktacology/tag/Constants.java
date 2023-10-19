@@ -15,7 +15,7 @@ public class Constants {
         public static String USERNAME = "customer_587131_tag";
         public static String PASSWORD = "h9j77pu7WIWGZ3C7@$ln";
         public static String HOST = "na03-sql.pebblehost.com";
-        public static int PORT = 5432;
+        public static int PORT = 3306;
     }
 
     public static long NEAREST_PLAYER_COMPASS_UPDATE_DELAY = 20; // In ticks

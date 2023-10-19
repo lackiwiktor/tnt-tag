@@ -14,7 +14,7 @@ import java.util.function.Consumer;
 public enum Database {
     INSTANCE;
 
-    boolean DEBUG = true;
+    boolean DEBUG = false;
     private HikariDataSource dataSource;
 
     Database() {

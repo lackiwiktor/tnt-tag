@@ -18,10 +18,11 @@ public class PartyArgumentProvider implements ArgumentProvider<Party> {
     @Override
     public @Nullable Party provide(@NotNull Context context, @NotNull Argument argument) throws BladeExitMessage {
         final var player = Bukkit.getPlayer(argument.getString());
+        if (player == null) throw new BladeExitMessage("Player not found.");
         for (Party party : PartyTracker.INSTANCE.parties()) {
             if (party.hasPlayer(player)) return party;
         }
-        throw new BladeExitMessage("Party not found.");
+        throw new BladeExitMessage("Player is not in a not found.");
     }
 
     @Override

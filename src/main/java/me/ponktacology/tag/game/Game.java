@@ -318,7 +318,7 @@ public class Game {
         return participants.values();
     }
 
-    private Collection<Spectator> spectators() {
+    public Collection<Spectator> spectators() {
         return spectators.values();
     }
 
@@ -353,6 +353,10 @@ public class Game {
             default:
                 return List.of("Game finished!");
         }
+    }
+
+    public boolean isFinished() {
+        return state == State.FINISHED;
     }
 
     @Override

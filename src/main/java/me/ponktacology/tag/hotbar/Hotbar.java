@@ -5,6 +5,8 @@ import me.ponktacology.tag.Hub;
 import me.ponktacology.tag.ItemBuilder;
 import me.ponktacology.tag.Plugin;
 import me.ponktacology.tag.game.GameTracker;
+import me.ponktacology.tag.game.Spectator;
+import me.ponktacology.tag.menu.SpectatorMenu;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -22,6 +24,13 @@ public enum Hotbar {
     IN_GAME(new HotbarItem[]{new HotbarItem(new ItemBuilder(Material.COMPASS).name("&eNearest player"), event -> {
     })}),
     SPECTATOR(new HotbarItem[]{null, null, null, null, null, null, null, null, new HotbarItem(new ItemBuilder(Material.COMPASS).name("&eTeleporter"), event -> {
+        if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
+        final var player = event.getPlayer();
+        final var game = GameTracker.INSTANCE.getByPlayer(player);
+        if (game == null) throw new IllegalStateException("not in game");
+        new SpectatorMenu(game).openMenu(player);
     }), new HotbarItem(new ItemBuilder(Material.COMPASS).name("&ePlay Again"), event -> {
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) {
             return;
@@ -31,16 +40,13 @@ public enum Hotbar {
         game.handleQuit(event.getPlayer());
         GameTracker.INSTANCE.joinQueue(event.getPlayer());
     }), new HotbarItem(new ItemBuilder(Material.COMPASS).name("&eReturn to Hub"), event -> {
-        System.out.println("CANODAWOND");
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) {
             return;
         }
-        System.out.println("DAWWAWD");
         final var game = GameTracker.INSTANCE.getByPlayer(event.getPlayer());
         if (game == null) throw new IllegalStateException("not in game");
         game.handleQuit(event.getPlayer());
         Hub.INSTANCE.moveToHub(event.getPlayer());
-        System.out.println("DAWAW");
     })}),
     IN_LOBBY(new HotbarItem[]{null, null, null, null, null, null, null, null, new HotbarItem(new ItemBuilder(Material.BED).name("&cReturn to Hub").lore("&7Right-click to return to the hub"), event -> {
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) {

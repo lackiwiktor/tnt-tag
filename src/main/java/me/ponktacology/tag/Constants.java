@@ -11,31 +11,31 @@ import java.util.concurrent.TimeUnit;
 public class Constants {
 
     public static class Database {
-        public static final String NAME = "tnt-tag";
-        public static final String USERNAME = "user";
-        public static final String PASSWORD = "1234";
-        public static final String HOST = "localhost";
-        public static final int PORT = 5432;
+        public static String NAME = "customer_587131_tag";
+        public static String USERNAME = "customer_587131_tag";
+        public static String PASSWORD = "h9j77pu7WIWGZ3C7@$ln";
+        public static String HOST = "na03-sql.pebblehost.com";
+        public static int PORT = 5432;
     }
 
-    public static final long NEAREST_PLAYER_COMPASS_UPDATE_DELAY = 20; // In ticks
-    public static final long ASSIST_TIME = TimeUnit.MILLISECONDS.convert(10, TimeUnit.SECONDS);
-    public static final int MAX_PLAYERS = 5;
-    public static final int REQUIRED_PLAYERS = 2;
-    public static final int COUNTDOWN_DURATION = 5; //In seconds
-    public static final long ROUND_DURATION = TimeUnit.MILLISECONDS.convert(45, TimeUnit.SECONDS); // In milliseconds
+    public static long NEAREST_PLAYER_COMPASS_UPDATE_DELAY = 20; // In ticks
+    public static long ASSIST_TIME = TimeUnit.MILLISECONDS.convert(10, TimeUnit.SECONDS);
+    public static int MAX_PLAYERS = 5;
+    public static int REQUIRED_PLAYERS = 2;
+    public static int COUNTDOWN_DURATION = 5; //In seconds
+    public static long ROUND_DURATION = TimeUnit.MILLISECONDS.convert(45, TimeUnit.SECONDS); // In milliseconds
 
-    public static final long FIRST_ROUND_DURATION = TimeUnit.MILLISECONDS.convert(60, TimeUnit.SECONDS);
-    public static final float INITIALLY_TAGGED_FACTOR = 0.25f;
-    public static final Location MAP_SPAWN = new Location(Bukkit.getWorlds().get(0), 5, 5, 5);
-    public static final Location LOBBY_SPAWN = new Location(Bukkit.getWorlds().get(0), -5, 5, -5);
+    public static long FIRST_ROUND_DURATION = TimeUnit.MILLISECONDS.convert(60, TimeUnit.SECONDS);
+    public static double INITIALLY_TAGGED_FACTOR = 0.25;
+    public static Location MAP_SPAWN = new Location(Bukkit.getWorlds().get(0), 5, 5, 5);
+    public static Location LOBBY_SPAWN = new Location(Bukkit.getWorlds().get(0), -5, 5, -5);
 
-    public static final Location HUB_SPAWN = new Location(Bukkit.getWorlds().get(0), 0, 5, 0);
-    public static final long COMBAT_LOG_TIME = TimeUnit.MILLISECONDS.convert(10, TimeUnit.SECONDS);
-    public static final long PARTY_INVITE_EVICTION_TIME = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
-    public static final boolean CAN_SPECTATORS_SEE_OTHER_SPECTATORS = true;
-    public static final int DEFAULT_MAX_PARTY_SIZE = 5;
-    public static final Map<String, Integer> MAX_PARTY_SIZE_PER_PERMISSION = new HashMap<>();
+    public static Location HUB_SPAWN = new Location(Bukkit.getWorlds().get(0), 0, 5, 0);
+    public static long COMBAT_LOG_TIME = TimeUnit.MILLISECONDS.convert(10, TimeUnit.SECONDS);
+    public static long PARTY_INVITE_EVICTION_TIME = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
+    public static boolean CAN_SPECTATORS_SEE_OTHER_SPECTATORS = true;
+    public static int DEFAULT_MAX_PARTY_SIZE = 5;
+    public static Map<String, Integer> MAX_PARTY_SIZE_PER_PERMISSION = new HashMap<>();
 
     static {
         MAX_PARTY_SIZE_PER_PERMISSION.put("party.size.vip", 15);

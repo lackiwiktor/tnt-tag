@@ -30,7 +30,7 @@ public class Statistics {
         // Terrible, n+1 problem, please fix!
         for (Statistic statistic : statistics.values()) {
             if (!statistic.dirty()) continue;
-            final var affectedRows = Database.INSTANCE.update("UPDATE SET value = ? WHERE uuid = ? AND type = ?", statement -> {
+            final var affectedRows = Database.INSTANCE.update("UPDATE statistics SET value = ? WHERE uuid = ? AND type = ?", statement -> {
                 try {
                     statement.setInt(1, statistic.value());
                     statement.setString(2, player.toString());

@@ -3,12 +3,10 @@ package me.ponktacology.tag;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Properties;
 import java.util.function.Consumer;
 
 public enum Database {
@@ -19,9 +17,9 @@ public enum Database {
 
     Database() {
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:mysql://" + Constants.Database.HOST + ":" + Constants.Database.PORT + "/" + Constants.Database.NAME);
-        config.setUsername(Constants.Database.USERNAME);
-        config.setPassword(Constants.Database.PASSWORD);
+        config.setJdbcUrl("jdbc:mysql://" + Constants.Database.DB_HOST + ":" + Constants.Database.DB_PORT + "/" + Constants.Database.DB_NAME);
+        config.setUsername(Constants.Database.DB_USERNAME);
+        config.setPassword(Constants.Database.DB_PASSWORD);
         config.addDataSourceProperty("cachePrepStmts", true);
         config.addDataSourceProperty("prepStmtCacheSize", 250);
         config.addDataSourceProperty("prepStmtCacheSqlLimit", 2048);

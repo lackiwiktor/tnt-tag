@@ -5,6 +5,7 @@ import me.ponktacology.tag.Hub;
 import me.ponktacology.tag.PlayerUtil;
 import me.ponktacology.tag.Visibility;
 import me.ponktacology.tag.hotbar.Hotbar;
+import me.ponktacology.tag.map.Arena;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -130,19 +131,19 @@ public class Participant {
         Hub.INSTANCE.moveToHub(player);
     }
 
-    public void prepareForLobby(Visibility.Strategy visibilityStrategy) {
+    public void prepareForLobby(Arena arena, Visibility.Strategy visibilityStrategy) {
         final var player = getPlayer();
         if (player == null) throw new IllegalStateException("offline player prepare");
         reset();
         updateVisibility(visibilityStrategy);
-        teleport(Constants.LOBBY_SPAWN);
+        teleport(arena.getLobbySpawn());
         Hotbar.IN_LOBBY.apply(getPlayer());
     }
 
-    public void prepareForGame() {
+    public void prepareForGame(Arena arena) {
         final var player = getPlayer();
         if (player == null) throw new IllegalStateException("offline player prepare");
-        teleport(Constants.MAP_SPAWN);
+        teleport(arena.getGameSpawn());
         applyEffects();
         Hotbar.IN_GAME.apply(player);
     }

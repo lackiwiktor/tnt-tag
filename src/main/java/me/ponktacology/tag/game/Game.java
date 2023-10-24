@@ -2,8 +2,8 @@ package me.ponktacology.tag.game;
 
 import me.ponktacology.tag.Constants;
 import me.ponktacology.tag.Visibility;
+import me.ponktacology.tag.map.Arena;
 import me.ponktacology.tag.party.PartyTracker;
-import me.ponktacology.tag.statistics.Statistics;
 import me.ponktacology.tag.statistics.StatisticsTracker;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -28,6 +28,7 @@ public class Game {
     private final Ticker logic = createTicker();
     private final Visibility.Strategy visibilityStrategy = createVisibilityStrategy();
     private final Countdown countdown = createCountdown();
+    private final Arena arena;
     private final Consumer<Game> finishCallback;
     private final boolean privateGame;
 
@@ -37,7 +38,8 @@ public class Game {
     private int round;
     private long roundStart;
 
-    public Game(boolean privateGame, Consumer<Game> finishCallback) {
+    public Game(Arena arena, boolean privateGame, Consumer<Game> finishCallback) {
+        this.arena = arena;
         this.privateGame = privateGame;
         this.finishCallback = finishCallback;
     }
@@ -86,7 +88,7 @@ public class Game {
 
     private Countdown createCountdown() {
         return new Countdown(() -> {
-            participants().forEach(Participant::prepareForGame); //Teleport players only on initial round start
+            participants().forEach(participant -> participant.prepareForGame(arena)); //Teleport players only on initial round start
             startRound();
         }, seconds -> {
             if (participants.size() < Constants.REQUIRED_PLAYERS) {
@@ -150,7 +152,7 @@ public class Game {
 
         final var participant = new Participant(player.getUniqueId());
         participants.put(player.getUniqueId(), participant);
-        participant.prepareForLobby(visibilityStrategy);
+        participant.prepareForLobby(arena, visibilityStrategy);
         broadcast(player.getDisplayName() + " joined (" + participants.size() + "/" + Constants.MAX_PLAYERS + ")");
         return true;
     }

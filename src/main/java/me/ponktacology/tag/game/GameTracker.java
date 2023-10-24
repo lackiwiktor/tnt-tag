@@ -1,6 +1,7 @@
 package me.ponktacology.tag.game;
 
 import me.ponktacology.tag.Plugin;
+import me.ponktacology.tag.map.ArenaTracker;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -23,7 +24,8 @@ public enum GameTracker {
     }
 
     public Game start(boolean privateGame) {
-        final var game = new Game(privateGame, games::remove);
+        final var arena = ArenaTracker.INSTANCE.getRandom();
+        final var game = new Game(arena, privateGame, games::remove);
         game.start();
         games.add(game);
         return game;

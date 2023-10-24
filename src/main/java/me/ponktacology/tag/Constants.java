@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Constants {
 
+
     public static class Database {
         public static String DB_NAME = "customer_587131_tag";
         public static String DB_USERNAME = "customer_587131_tag";
@@ -18,6 +19,8 @@ public class Constants {
         public static int DB_PORT = 3306;
     }
 
+    public static int DELAY_BETWEEN_ROUNDS = 20 * 5;
+    public static int DELAY_AFTER_GAME_END = 20 * 10;
     public static long NEAREST_PLAYER_COMPASS_UPDATE_DELAY = 20; // In ticks
     public static long ASSIST_TIME = TimeUnit.MILLISECONDS.convert(10, TimeUnit.SECONDS);
     public static int MAX_PLAYERS = 5;

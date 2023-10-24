@@ -5,6 +5,7 @@ import me.ponktacology.tag.Hub;
 import me.ponktacology.tag.PlayerUtil;
 import me.ponktacology.tag.Visibility;
 import me.ponktacology.tag.hotbar.Hotbar;
+import me.ponktacology.tag.map.Arena;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
@@ -24,14 +25,14 @@ public class Spectator {
         return Bukkit.getPlayer(uuid);
     }
 
-    public void setup(Visibility.Strategy visibilityStrategy) {
+    public void setup(Arena arena, Visibility.Strategy visibilityStrategy) {
         final var player = getPlayer();
         if (player == null) throw new IllegalStateException("offline");
         player.getInventory().clear();
         player.setAllowFlight(true);
         player.setFlying(true);
         Visibility.update(player, visibilityStrategy);
-        player.teleport(Constants.LOBBY_SPAWN);
+        player.teleport(arena.getLobbySpawn());
         PlayerUtil.resetPlayer(player);
         Hotbar.SPECTATOR.apply(player);
     }

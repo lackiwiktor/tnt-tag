@@ -19,15 +19,14 @@ public class Game {
 
     public static final NumberFormat TIMER_FORMAT = new DecimalFormat("0.0");
 
-    private enum State {WAITING_FOR_PLAYERS, COUNTDOWN, ROUND_START, ROUND_END, FINISHED, CANCELLED}
+    private enum State {WAITING_FOR_PLAYERS, COUNTDOWN, ROUND_RUNNING, ROUND_END, GAME_END, FINISHED, CANCELLED}
 
     private final UUID id = UUID.randomUUID();
     private final Participant[] podium = new Participant[3];
     private final Map<UUID, Participant> participants = new HashMap<>();
     private final Map<UUID, Spectator> spectators = new HashMap<>();
-    private final Ticker logic = createTicker();
+    private final Logic logic = createLogic();
     private final Visibility.Strategy visibilityStrategy = createVisibilityStrategy();
-    private final Countdown countdown = createCountdown();
     private final Arena arena;
     private final Consumer<Game> finishCallback;
     private final boolean privateGame;
@@ -48,25 +47,58 @@ public class Game {
         logic.start();
     }
 
-    private Ticker createTicker() {
-        return new Ticker(() -> {
+    private Logic createLogic() {
+        return new Logic(() -> {
+            switch (state) {
+                case WAITING_FOR_PLAYERS:
+                    waitForPlayers();
+                    break;
+                case COUNTDOWN:
+                    countDown();
+                    break;
+                case ROUND_RUNNING:
+                    if (hasRoundEnded()) {
+                        endRound();
+                        return;
+                    }
+                    if (ticks % Constants.NEAREST_PLAYER_COMPASS_UPDATE_DELAY == 0) {
+                        updateCompass();
+                    }
+                    break;
+                case ROUND_END:
+                    if (ticks >= Constants.DELAY_BETWEEN_ROUNDS) {
+                        startRound();
+                    }
+                    break;
+                case GAME_END:
+                    if (ticks >= Constants.DELAY_AFTER_GAME_END) {
+                        finishGame();
+                    }
+                    break;
+            }
+
             ticks++;
-            if (state == State.WAITING_FOR_PLAYERS) {
-                handleWaitingForPlayers();
-                return;
-            }
-
-            if (state == State.ROUND_START) {
-                if (hasRoundEnded()) {
-                    endRound();
-                    return;
-                }
-
-                if (ticks % Constants.NEAREST_PLAYER_COMPASS_UPDATE_DELAY == 0) {
-                    updateCompass();
-                }
-            }
         });
+    }
+
+    private void waitForPlayers() {
+        if (participants.size() >= Constants.REQUIRED_PLAYERS) {
+            state = State.COUNTDOWN;
+            ticks = 0;
+        }
+    }
+
+    private void countDown() {
+        if (participants.size() < Constants.REQUIRED_PLAYERS) {
+            state = State.WAITING_FOR_PLAYERS;
+            broadcast("Waiting for players...");
+            return;
+        }
+        final var timeLeft = Constants.COUNTDOWN_DURATION - ticks;
+        if (timeLeft <= 0) {
+            participants().forEach(participant -> participant.prepareForGame(arena)); //Teleport players only on initial round start
+            startRound();
+        } else broadcast("Game is starting in " + timeLeft + "!");
     }
 
     private void updateCompass() {
@@ -86,20 +118,6 @@ public class Game {
         }
     }
 
-    private Countdown createCountdown() {
-        return new Countdown(() -> {
-            participants().forEach(participant -> participant.prepareForGame(arena)); //Teleport players only on initial round start
-            startRound();
-        }, seconds -> {
-            if (participants.size() < Constants.REQUIRED_PLAYERS) {
-                broadcast("Waiting for players...");
-                countdown.cancel();
-                state = State.WAITING_FOR_PLAYERS;
-                return;
-            }
-            broadcast("Game is starting in " + seconds + "!");
-        }, Constants.COUNTDOWN_DURATION);
-    }
 
     private Visibility.Strategy createVisibilityStrategy() {
         return (player, other) -> {
@@ -115,13 +133,6 @@ public class Game {
         };
     }
 
-    private void handleWaitingForPlayers() {
-        final var playerCount = participants.size();
-
-        if (playerCount >= Constants.REQUIRED_PLAYERS) {
-            startCountdown();
-        }
-    }
 
     public boolean join(Player player) {
         if (state != State.WAITING_FOR_PLAYERS && state != State.COUNTDOWN) {
@@ -157,15 +168,10 @@ public class Game {
         return true;
     }
 
-    private void startCountdown() {
-        state = State.COUNTDOWN;
-        countdown.start();
-    }
-
     private void startRound() {
         round++;
         roundStart = System.currentTimeMillis();
-        state = State.ROUND_START;
+        state = State.ROUND_RUNNING;
         final var participants = new ArrayList<>(participants());
         Collections.shuffle(participants);
         var initiallyTaggedCount = Math.max(participants.size() * Constants.INITIALLY_TAGGED_FACTOR, 1);
@@ -176,7 +182,6 @@ public class Game {
     }
 
     private void endRound() {
-        state = State.ROUND_END;
         List<Participant> losers = new ArrayList<>();
         List<Participant> winners = new ArrayList<>();
         final var participantIterator = participants.entrySet().iterator();
@@ -222,8 +227,10 @@ public class Game {
             return;
         }
 
+        state = State.ROUND_END;
+        ticks = 0;
+
         broadcast(losers.stream().map(Participant::getName).collect(Collectors.joining(", ")) + " are losers!");
-        startRound();
     }
 
     private void endGame(Participant winner) {
@@ -233,13 +240,13 @@ public class Game {
             if (participant == null) continue;
             broadcast((i + 1) + "# " + participant.getName());
         }
-        finishGame();
+        state = State.GAME_END;
+        ticks = 0;
     }
 
     private void finishGame() {
         state = State.FINISHED;
         logic.cancel();
-        countdown.cancel();
         spectators().forEach(Spectator::moveToHub);
         participants().forEach(Participant::moveToHub);
         finishCallback.accept(this);
@@ -263,7 +270,7 @@ public class Game {
             return false;
         }
 
-        if (hasRoundEnded() || state != State.ROUND_START) {
+        if (hasRoundEnded() || state != State.ROUND_RUNNING) {
             event.setCancelled(true);
             return true;
         }
@@ -308,7 +315,7 @@ public class Game {
     private void addSpectator(Participant participant) {
         final var spectator = participant.toSpectator();
         spectators.put(participant.getUUID(), spectator);
-        spectator.setup(visibilityStrategy);
+        spectator.setup(arena, visibilityStrategy);
     }
 
     public boolean isPrivate() {
@@ -354,7 +361,7 @@ public class Game {
             case WAITING_FOR_PLAYERS:
             case COUNTDOWN:
                 return List.of("Players: " + participants.size() + "/" + Constants.MAX_PLAYERS);
-            case ROUND_START:
+            case ROUND_RUNNING:
                 return List.of("Round: " + round, "Explosion in: " + TIMER_FORMAT.format(roundTimeLeft() / 1000.0), "Alive: " + participants.size());
             default:
                 return List.of("Game finished!");

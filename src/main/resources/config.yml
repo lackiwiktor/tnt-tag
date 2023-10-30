@@ -1,0 +1,9 @@
+messages:
+  waiting_for_players: "Waiting for players..."
+  game_starts_in: "Game is starting in {time}"
+  player_joined: "{player} joined {game_size}/{game_max_size}"
+  player_exploded: "{player} exploded!"
+  round_end: "{losers} are losers"
+  player_tag: "{player} is now IT."
+  player_quit: "{player} quit."
+  scoreboard_waiting_for_players:

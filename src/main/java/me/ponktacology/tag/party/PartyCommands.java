@@ -24,19 +24,19 @@ public class PartyCommands {
     @Command("party create")
     @Description("Creates a party")
     public static void create(@Sender Player actor) {
-        PartyTracker.INSTANCE.createParty(actor);
+        PartyTracker.INSTANCE.createParty(actor, true);
     }
 
-    @Command("party invite")
+    @Command({"party invite", "party"})
     @Description("Invites to the party")
-    public static void create(@Sender Player actor, @Name("target") Player other) {
+    public static void create(@Sender Player actor, @Name("player") Player other) {
         PartyTracker.INSTANCE.inviteToParty(actor, other);
     }
 
     @Command({"party join", "party accept"})
     @Description("Joins the party")
-    public static void create(@Sender Player actor, @Name("party") Party party) {
-        PartyTracker.INSTANCE.acceptInvite(actor, party);
+    public static void join(@Sender Player actor, @Name("player") Player player) {
+        PartyTracker.INSTANCE.acceptInvite(actor, player);
     }
 
     @Command("party leave")

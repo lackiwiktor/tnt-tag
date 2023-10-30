@@ -1,17 +1,25 @@
 package me.ponktacology.tag.party;
 
 import me.ponktacology.tag.Hub;
+import me.ponktacology.tag.Scheduler;
 import me.ponktacology.tag.game.GameTracker;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public enum PartyTracker {
     INSTANCE;
 
+    private final Map<UUID, List<PartyRequest>> requests = new HashMap<>();
     private final Set<Party> parties = new HashSet<>();
+
+    PartyTracker() {
+        Scheduler.timer(() -> {
+            this.requests.values().forEach(requests -> requests.removeIf(PartyRequest::hasExpired));
+            parties.forEach(Party::evictRequests);
+        }, 20);
+    }
 
     public boolean startGame(Player actor) {
         final var party = getByPlayer(actor);
@@ -34,7 +42,7 @@ public enum PartyTracker {
         return game.join(actor);
     }
 
-    public boolean createParty(Player player) {
+    public boolean createParty(Player player, boolean message) {
         if (!Hub.INSTANCE.isInHub(player)) {
             player.sendMessage("You must be in a hub in order to create a party.");
             return false;
@@ -46,19 +54,26 @@ public enum PartyTracker {
         }
 
         parties.add(new Party(player));
-        player.sendMessage("Successfully created a party.");
+        if (message) player.sendMessage("Successfully created a party.");
         return true;
     }
 
     public boolean inviteToParty(Player actor, Player player) {
-        final var party = getByPlayer(actor);
-        if (party == null) {
-            actor.sendMessage("You are not in a party.");
+        if (getByPlayer(player) != null) {
+            actor.sendMessage("Player is already in a party.");
             return false;
         }
 
-        if (getByPlayer(player) != null) {
-            actor.sendMessage("Player is already in a party.");
+        final var party = getByPlayer(actor);
+        if (party == null) {
+            final var request = new PartyRequest(actor.getUniqueId());
+            final var requests = this.requests.computeIfAbsent(player.getUniqueId(), k -> new ArrayList<>());
+            if (requests.contains(request)) {
+                actor.sendMessage("You already invited this player.");
+                return false;
+            }
+            requests.add(request);
+            player.sendMessage("You have been invited to " + actor.getName() + "'s party.");
             return false;
         }
 
@@ -74,7 +89,7 @@ public enum PartyTracker {
         return true;
     }
 
-    public boolean acceptInvite(Player actor, Party party) {
+    public boolean acceptInvite(Player actor, Player player) {
         if (getByPlayer(actor) != null) {
             actor.sendMessage("You are already in a party.");
             return false;
@@ -83,6 +98,24 @@ public enum PartyTracker {
         if (!Hub.INSTANCE.isInHub(actor)) {
             actor.sendMessage("You must be in a hub in order to join a party.");
             return false;
+        }
+
+        final var party = getByPlayer(player);
+        if (party == null) {
+            final var request = new PartyRequest(player.getUniqueId());
+            final var requests = this.requests.get(actor.getUniqueId());
+            if (requests == null || !requests.contains(request)) {
+                actor.sendMessage("You wasn't invited to this party.");
+                return false;
+            }
+            requests.remove(request);
+            if (!createParty(player, false)) {
+                actor.sendMessage("Couldn't join the party.");
+                return false;
+            }
+            getByPlayer(player).addMember(actor);
+            actor.sendMessage("Successfully joined the party.");
+            return true;
         }
 
         if (!party.hasInvited(actor)) {
@@ -161,9 +194,5 @@ public enum PartyTracker {
         }
 
         return null;
-    }
-
-    public Set<Party> parties() {
-        return parties;
     }
 }

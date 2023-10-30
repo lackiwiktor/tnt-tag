@@ -10,7 +10,7 @@ import org.bukkit.entity.Player;
 
 public class GameCommands {
 
-    @Command("game join")
+    @Command({"game join", "game requeue"})
     @Description("Joins the game")
     public static void join(@Sender Player sender) {
         GameTracker.INSTANCE.joinQueue(sender);
@@ -32,14 +32,5 @@ public class GameCommands {
         }
         game.handleQuit(sender);
         Hub.INSTANCE.moveToHub(sender);
-    }
-
-    @Command("game requeue")
-    public static void requeue(@Sender Player sender) {
-        final var game = GameTracker.INSTANCE.getByPlayer(sender);
-        if (game != null) {
-            game.handleQuit(sender);
-        }
-        GameTracker.INSTANCE.joinQueue(sender);
     }
 }

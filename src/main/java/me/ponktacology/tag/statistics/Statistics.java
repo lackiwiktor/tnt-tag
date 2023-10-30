@@ -27,7 +27,7 @@ public class Statistics {
     }
 
     public void save() {
-        // Terrible, n+1 problem, please fix!
+        // Can be done in 1 query using sql switch case
         for (Statistic statistic : statistics.values()) {
             if (!statistic.dirty()) continue;
             final var affectedRows = Database.INSTANCE.update("UPDATE statistics SET value = ? WHERE uuid = ? AND type = ?", statement -> {
@@ -39,7 +39,6 @@ public class Statistics {
                     throw new RuntimeException(e);
                 }
             });
-            System.out.println(affectedRows);
         }
     }
 
@@ -62,7 +61,7 @@ public class Statistics {
                 }
             }
 
-            // Terrible, n+1 problem, please fix!
+            // Can be done in 1 query using sql switch case
             for (Statistic.Type type : Statistic.Type.values()) {
                 if (statistics.containsKey(type)) continue;
                 Database.INSTANCE.update("INSERT INTO statistics (uuid, type, value) VALUES (?, ?, ?)", statement -> {

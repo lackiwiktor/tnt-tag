@@ -1,6 +1,8 @@
-package me.ponktacology.tag.map;
+package me.ponktacology.tag.arena;
 
+import com.google.common.base.Preconditions;
 import me.ponktacology.tag.Plugin;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -11,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -27,13 +30,14 @@ public enum ArenaTracker {
         file = new File(Plugin.get().getDataFolder(), "arenas.yml");
         if (!file.exists()) {
             try {
-                file.createNewFile();
+               Preconditions.checkState(file.createNewFile());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
         configuration = YamlConfiguration.loadConfiguration(file);
         load();
+        Bukkit.getPluginManager().registerEvents(new ArenaSaveListener(), Plugin.get());
     }
 
     public @Nullable Arena getById(String id) {
@@ -42,6 +46,11 @@ public enum ArenaTracker {
 
     public void create(String id) {
         arenas.put(id.toUpperCase(Locale.ROOT), new Arena(id));
+    }
+
+    public void delete(Arena arena) {
+        arenas.remove(arena.getId().toUpperCase(Locale.ROOT));
+        configuration.set("arenas." + arena.getId(), null);
     }
 
     private void load() {
@@ -76,9 +85,13 @@ public enum ArenaTracker {
     }
 
     public Arena getRandom() {
-        final var readyArenas = arenas.values().stream().filter(Arena::isSetup).toArray(Arena[]::new);
+        final var readyArenas = arenas.values().toArray(Arena[]::new);
         if (readyArenas.length == 0) throw new UnsupportedOperationException("no arenas");
         return readyArenas[ThreadLocalRandom.current().nextInt(readyArenas.length)];
+    }
+
+    public Collection<Arena> getAll() {
+        return arenas.values();
     }
 
     private static class ArenaSaveListener implements Listener {

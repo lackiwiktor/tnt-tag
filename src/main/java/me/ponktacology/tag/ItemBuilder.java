@@ -12,8 +12,10 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.material.MaterialData;
 
-import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -77,7 +79,7 @@ public class ItemBuilder extends ItemStack {
      */
     public ItemBuilder name(String name) {
         ItemMeta meta = getItemMeta();
-        meta.setDisplayName(StringUtil.color(name));
+        meta.setDisplayName(me.ponktacology.tag.Color.translate(name));
         setItemMeta(meta);
         return this;
     }
@@ -91,7 +93,7 @@ public class ItemBuilder extends ItemStack {
      */
     public ItemBuilder appendName(String append) {
         ItemMeta meta = getItemMeta();
-        meta.setDisplayName(StringUtil.color((meta.hasDisplayName() ? meta.getDisplayName() : "") + append));
+        meta.setDisplayName(me.ponktacology.tag.Color.translate((meta.hasDisplayName() ? meta.getDisplayName() : "") + append));
         setItemMeta(meta);
         return this;
     }
@@ -109,7 +111,7 @@ public class ItemBuilder extends ItemStack {
         if(lore == null)
             lore = new ArrayList<>();
 
-        lore.add(StringUtil.color(text));
+        lore.add(me.ponktacology.tag.Color.translate(text));
         meta.setLore(lore);
         setItemMeta(meta);
         return this;
@@ -125,7 +127,7 @@ public class ItemBuilder extends ItemStack {
         if(lore == null)
             lore = new ArrayList<>();
 
-        lore.addAll(text.stream().map(StringUtil::color).collect(Collectors.toList()));
+        lore.addAll(text.stream().map(me.ponktacology.tag.Color::translate).collect(Collectors.toList()));
         meta.setLore(lore);
         setItemMeta(meta);
         return this;

@@ -1,43 +1,42 @@
-package me.ponktacology.tag.map;
+package me.ponktacology.tag.arena;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.jetbrains.annotations.Nullable;
 
 public class Arena {
 
     private final String id;
-    private @Nullable String displayName;
-    private @Nullable Location lobbySpawn;
-    private @Nullable Location gameSpawn;
+    private String displayName;
+    private Location lobbySpawn;
+    private Location gameSpawn;
 
     public Arena(String id) {
         this.id = id;
+        this.displayName = id;
+        this.lobbySpawn = new Location(Bukkit.getWorlds().get(0), 0, 0, 0);
+        this.gameSpawn = new Location(Bukkit.getWorlds().get(0), 0, 0, 0);
     }
 
-    public Arena(String id, @Nullable String displayName, @Nullable Location lobbySpawn, @Nullable Location gameSpawn) {
+    public Arena(String id, String displayName, Location lobbySpawn, Location gameSpawn) {
         this.id = id;
         this.displayName = displayName;
         this.lobbySpawn = lobbySpawn;
         this.gameSpawn = gameSpawn;
     }
 
-    public boolean isSetup() {
-        return lobbySpawn != null && gameSpawn != null;
-    }
-
     public String getId() {
         return id;
     }
 
-    public @Nullable Location getLobbySpawn() {
+    public Location getLobbySpawn() {
         return lobbySpawn;
     }
 
-    public @Nullable Location getGameSpawn() {
+    public Location getGameSpawn() {
         return gameSpawn;
     }
 
-    public @Nullable String getDisplayName() {
+    public String getDisplayName() {
         return displayName;
     }
 

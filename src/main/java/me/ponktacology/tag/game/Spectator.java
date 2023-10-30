@@ -1,11 +1,10 @@
 package me.ponktacology.tag.game;
 
-import me.ponktacology.tag.Constants;
 import me.ponktacology.tag.Hub;
 import me.ponktacology.tag.PlayerUtil;
 import me.ponktacology.tag.Visibility;
 import me.ponktacology.tag.hotbar.Hotbar;
-import me.ponktacology.tag.map.Arena;
+import me.ponktacology.tag.arena.Arena;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
@@ -60,5 +59,9 @@ public class Spectator {
     @Override
     public int hashCode() {
         return Objects.hash(uuid);
+    }
+
+    public UUID getUUID() {
+        return uuid;
     }
 }

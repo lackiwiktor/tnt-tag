@@ -1,7 +1,7 @@
 package me.ponktacology.tag.game;
 
 import me.ponktacology.tag.Plugin;
-import me.ponktacology.tag.map.ArenaTracker;
+import me.ponktacology.tag.arena.ArenaTracker;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -11,13 +11,13 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public enum GameTracker {
     INSTANCE;
 
     private final Set<Game> games = new HashSet<>();
+    private final Map<UUID, Game> playerByGame = new HashMap<>();
 
     public void initialize() {
         Bukkit.getPluginManager().registerEvents(new GameListener(), Plugin.get());
@@ -45,15 +45,20 @@ public enum GameTracker {
         joinQueue(player); //Call recursively
     }
 
+    public void addPlayer(Player player, Game game) {
+        playerByGame.put(player.getUniqueId(), game);
+    }
+
+    public void removePlayer(UUID uuid) {
+        playerByGame.remove(uuid);
+    }
+
     public boolean isInGame(Player player) {
         return getByPlayer(player) != null;
     }
 
     public @Nullable Game getByPlayer(Player player) {
-        for (Game game : games) {
-            if (game.isInGame(player)) return game;
-        }
-        return null;
+        return playerByGame.get(player.getUniqueId());
     }
 
     public Set<Game> games() {

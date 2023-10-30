@@ -5,7 +5,7 @@ import me.ponktacology.tag.Hub;
 import me.ponktacology.tag.PlayerUtil;
 import me.ponktacology.tag.Visibility;
 import me.ponktacology.tag.hotbar.Hotbar;
-import me.ponktacology.tag.map.Arena;
+import me.ponktacology.tag.arena.Arena;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -21,9 +21,9 @@ import java.util.stream.Collectors;
 public class Participant {
 
     private final UUID uuid;
+    private final Map<Participant, Long> combatHistory = new HashMap<>();
     private boolean tagged;
     private long lastUnTag;
-    private Map<Participant, Long> combatHistory = new HashMap<>();
 
     public Participant(UUID uuid) {
         this.uuid = uuid;

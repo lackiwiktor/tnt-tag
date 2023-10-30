@@ -11,7 +11,7 @@ import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 public enum Hub {
     INSTANCE;
 
-    private static final Visibility.Strategy VISIBILITY_STRATEGY = (player, other) -> true;
+    private static final Visibility.Strategy VISIBILITY_STRATEGY = (player, other) -> Hub.INSTANCE.isInHub(other);
 
     public void initialize() {
         Bukkit.getPluginManager().registerEvents(new HubListener(), Plugin.get());

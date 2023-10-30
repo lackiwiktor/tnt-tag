@@ -73,6 +73,10 @@ public class Party {
         return members.stream().map(Bukkit::getPlayer).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
+    public void evictRequests() {
+        invites.removeIf(PartyInvite::hasExpired);
+    }
+
     @Override
     public String toString() {
         return "Party{" +
@@ -96,4 +100,5 @@ public class Party {
     public int hashCode() {
         return Objects.hash(id);
     }
+
 }
